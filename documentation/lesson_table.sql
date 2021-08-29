@@ -1,0 +1,7 @@
+CREATE TABLE Lesson (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(30) NOT NULL,
+    description VARCHAR(200),
+    user_fk VARCHAR(20) NOT NULL REFERENCES Account ON DELETE CASCADE,
+    modification_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

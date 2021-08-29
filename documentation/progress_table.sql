@@ -1,0 +1,5 @@
+CREATE TABLE Progress (
+    value INTEGER NOT NULL,
+    lessonEntry_fk INT NOT NULL REFERENCES Flashcard ON DELETE CASCADE,
+    training_fk INT NOT NULL REFERENCES Training ON DELETE CASCADE
+);

@@ -1,0 +1,560 @@
+Akcje dostępne na serwerze można wykonywać poprzez wywoływanie odpowiednich żądań http z właściwymi parametrami.
+Spis aktualnie dostępnych żądań i ich opcji jest przedstawiony w niniejszym pliku.
+Schemat ich dokumentacji to:
+[Nazwa pliku php obsługującego żądanie] [typ żądania http]:
+    [opis]
+    obsługiwane parametry:
+        [lista obsługiwanych parametrów w postaci [nazwa parametru] {[typ]}: [opis działania parametru]]
+    zwracana wartość:
+        [opis zwracanego wyniku]
+
+Gwiazdka przy nazwie parametru żadania znaczy,
+że jest on opcjonalny i w przypadku jego braku zostanie przyjęta odpowiednia wartość domyślna.
+
+Żadania z założenia zwracają wynik w formacie JSON.
+Domyślnie jest to obiekt zawierający atrybut result,
+którego wartością jest liczba informująca o statusie wykonania żądanej akcji.
+Wartość 0 odpowiada sukcesowi, kolejne dodatnie liczby naturalne,
+informują o odpowiednich błędach w obsłudze akcji.
+Dodatkowo obiekt może zawierać inne opcjonalne atrybuty,
+zawierające dodatkowe informacje o wykonaniu akcji,
+przedstawione w specyficznym dla danego żądania formacie.
+
+Znacznikiem TODO, oznaczone są rzeczy do zrobienie, nieobecne w aktualnej implementacji
+
+
+
+login.php POST:
+    Umożliwia zalogowanie użytkownika,
+    czyli utworzenie odpowiedniej sesji za pomocą ciasteczek.
+    obsługiwane parametry:
+        login {napis}:          login użytkownika, do zalogowania
+        password {napis}:       niezaszyfrowane hasło użytkownika, do zalogowania
+    zwracana wartość:
+        0:              logowanie zakończone sukcesem
+        1:              istnieje już sesja z zalogowanym użytkownikiem
+        2:              brakuje, któregoś z parametrów żądania
+        3:              któryś, z parametrów żądania jest pusty
+        4:              użytkownik o podanym loginie i haśle nie istnieje
+
+
+register.php POST:
+    Umożliwia dokonanie rejestracji użytkownika w systemie,
+    czyli dodanie odpowiedniego wpisu do bazy danych.
+    Dodatkowo utworzony użytkownik jest automatycznie zalogowany.
+    obsługiwane parametry:
+        login {napis}:          login użytkownika, do utworzenia konta
+        password {napis}:       niezaszyfrowane hasło, nowego użytkownika
+    zwracana wartość:
+        0:              rejestracja zakończona sukcesem, użytkownik zostaje zalogowany
+        1:              istnieje już sesja z zalogowanym użytkownikiem
+        2:              brakuje, któregoś z parametrów żądania
+        3:              któryś, z parametrów żądania jest pusty
+        4:              podany login, nie jest poprawnym składniowo loginem użytkownika
+        5:              podane hasło, nie jest poprawnym składniowo hasłem
+        6:              podany login jest już zajęty
+        7:              niespodziewany błąd przy próbie dodania użytkownika do bazy danych
+
+
+TODO (zmienić typ żądania na POST)
+createNewLesson.php GET:
+    Umożliwia zalogowanemu użytkownikowi utworzenie nowej lekcji.
+    obsługiwane parametry:
+        name {napis}:           nazwa lekcji do dodania
+        description* {napis}:   opis lekcji, domyślnie pusty napis
+    zwracana wartość:
+        0:
+            dodanie nowej lekcji zakończone sukcesem,
+            id utworzonej lekcji zostaje zwrócone w atrybucie createdLessonId
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak, któregoś z nieopcjonalnych parametrów żadania
+        3:              podana nazwa lekcji, nie jest składniowo poprawna
+        4:              podany opis lekcji, nie jest składniowo poprawnym
+        5:              niespodziewany błąd przy próbie dodania lekcji do bazy danych
+
+
+listLesson.php GET:
+    Umożliwia zalogowanemu użytkownikowi pobranie listy lekcji,
+    opcjonalnie filtrując je według jakiegoś kryterium.
+    obsługiwane parametry:
+        limit* {liczba}:        maksymalna liczba lekcji do zwrócenia,
+                                TODO domyślna wartość -1 oznaczająca wszystkie możliwe
+    zwracana wartość:
+        0:
+            zwrócenie listy lekcji zakończone sukcesem,
+            parametr data wyniku jest tabelką obiektów postaci
+            {"id":[id lekcji],"name":[nazwa lekcji],"description":[opis lekcji]}
+            gdzie każdy taki obiekt odpowiada pojedynczej lekcji w bazie danych
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              niespodziewany błąd przy próbie odczytania listy lekcji z bazy danych
+
+removeLesson.php POST:
+    Umożliwia zalogowanego użytkownikowi usunięcie lekcji, do której ma odpowiednie prawa dostępu.
+    obsługiwane parametry:
+        lessonId {liczba}:      id lekcji, która ma zostać usunięta
+    zwracana wartość:
+        0:              usunięcie lekcji zakończone sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak, któregoś z parametrów żądania
+        3:              parametr lessonId, nie jest liczbą całkowitą
+        4:              użytkownik nie ma praw odpowiednich praw dostępów do zadanej lekcji,
+                        lub lekcja o zadanym id nie istnieje
+        5:              niespodziewany błąd przy próbie usunięcia lekcji z bazy danych
+
+getLessonEntires.php GET:
+    Umożliwia zalogowanemu użytkownikowi pobranie listy wpisów z lekcji, do której ma prawa dostępu.
+    obsługiwane parametry:
+        lessonId {liczba}:      id lekcji, dla której lista wpisów ma być zwrócona
+    zwracana wartość:
+        0:
+            zwrócenie listy wpisów lekcji zakończone sukcesem,
+            parametr data wyniku jest tabelką obiektów postaci
+            {"id":[id wpisu],"question":[pytanie],"answer":[odpowiedź]}
+            gdzie każdy taki obiekt odpowiada pojedynczemu wpisowi w zadanej lekcji
+        1:              w danej sesji nie ma zalogowanego użytkownika
+        2:              brak, któregoś z parametrów żądania
+        3:              parametr lessonId, nie jest liczbą całkowitą
+        4:              zalogowany użytkownik nie ma praw dostępu do zadanej lekcji,
+                        lub lekcja nie istnieje
+        5:              niespodziewany błąd przy próbie odczytania listy wpisów lekcji z bazy danych
+
+TODO zmienić typ żadania na POST
+addLessonEntry.php GET:
+    Umożliwia zalogowanemu użytkownikowi dodanie wpisu lekcji, do której ma prawa dostępu.
+    obsługiwane parametry:
+        lessonId {liczba}:      id lekcji, do której ma być dodany wpis
+        question {napis}:       wartość pola question dodawanego wpisu
+        answer {napis}:         wartość pola answer dodawanego wpisu
+    zwracana wartość:
+        0:
+            dodanie wpisu do lekcji zakończone sukcesem,
+            id utworzonego wpisu zostaje zwrócone w atrybucie createdEntryId
+        1:              w danej sesji nie ma zalogowanego użytkownika
+        2:              brak, któregoś z parametrów żądania
+        3:              parametr lessonId, nie jest liczbą całkowitą
+        4:              parametr question, nie jest poprawny składniowo
+        5:              parametr answer, nie jest poprawny składniowo
+        6:              zalogowany użytkownik nie ma praw dostępu do zadanej lekcji,
+                        lub lekcja nie istnieje
+        7:              niespodziewany błąd przy próbie dodania wpisu do bazy danych
+
+TODO: zmienić typ żądania na post
+editLessonEntry.php GET:
+    Umożliwia zalogowanemu użytkownikowi zmianę wpisu lekcji, do której ma prawa dostępu.
+    obsługiwane parametry:
+        entryId {liczba}:       id wpisu, który ma być zmieniony
+        newQuestion* {napis}:   nowa wartość pola question wpisu
+        newAnswer* {napis}:     nowa wartość pola answer wpisu
+        #                       któryś z opcjonalnych parametrów newQuestion, newAnswer musi wystąpić
+    zwracana wartość:
+        0:              zaktualizowanie wartości wpisu zakończone sukcesem
+        1:              w danej sesji nie ma zalogowanego użytkownika
+        2:              brak, któregoś z wymaganych parametrów żądania
+        3:              parametr entryId, nie jest liczbą całkowitą
+        4:              parametr nweQuestion, nie jest poprawny składniowo
+        5:              parametr newAnswer, nie jest poprawny składniowo
+        6:              zalogowany użytkownik nie ma praw dostępu do lekcji zawierającej wpis,
+                        lub wpis nie istnieje
+        7:              niespodziewany błąd przy próbie aktualizacji wpisu
+    TODO {
+    uwagi:
+        zmiana lekcji powinna odpowiednio aktualizować również wszystkie powiązane z lekcją nauki.
+    }
+
+TODO zmienić typ żądania na POST
+removeLessonEntry.php GET:
+    Umożliwia zalogowanemu użytkownikowi usunięcie wpisu lekcji, do której ma prawa dostępu.
+    obsługiwane parametry:
+        entryId {liczba}:       id wpisu, który ma zostać usunięty
+    zwracana wartość:
+        0:              usunięcie wpisu zakończone sukcesem
+        1:              w danej sesji nie ma zalogowanego użytkownika
+        2:              brak, któregoś z wymaganych parametrów żądania
+        3:              parametr entryId, nie jest liczbą całkowitą
+        4:              zalogowany użytkownik nie ma praw dostępu do lekcji zawierającej wpis,
+                        lub wpis nie istnieje
+        5:              niespodziewany błąd przy próbie usunięcia wpisu
+
+listTrainings.php GET:
+    Umożliwia zalogowanemu użytkownikowi pobranie listy zaczętych przez niego nauk,
+    opcjonalnie filtrując je według jakiegoś kryterium.
+    obsługiwane parametry:
+        limit* {liczba}:        maksymalna liczba nauk do zwrócenia,
+                                domyślna wartość -1 oznaczająca wszystkie możliwe
+    zwracana wartość:
+        0:
+            zwrócenie listy nauk zakończone sukcesem,
+            parametr data wyniku jest tabelką obiektów postaci
+            {"id":[id nauki], "name":[nazwa nauki], "batchsize":[wielkość partii treningowej],
+                "trainingrepetitions":[liczba powtórzeń], "lessonid":[id bazowej lekcji]}
+            gdzie każdy taki obiekt odpowiada pojedynczej nauce w bazie danych
+            dodatkowo każdy wpis mógłby zawierać informację o statusie nauki:
+            (W TRAKCIE (procentowy postęp), ZAKOŃCZONA)
+            dodatkowo każdy wpis mógłby zawierać wpis powiązanej lekcji,
+            aby ułatwić obsługę przez klienta
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              parametr limit ma nieprawidłową wartość
+        3:              niespodziewany błąd przy próbie odczytania listy nauk z bazy danych
+        4:              nieprawidłowa metoda http
+
+getTraining.php GET:
+    Umożliwia zalogowanemu użytkownikowi pobranie nauki o podanym id.
+    obsługiwane parametry:
+        trainingId {liczba}:        id nauki do zwrócenia
+    zwracana wartość:
+        0:
+            zwrócenie nauki zakończone sukcesem,
+            parametr data wyniku jest obiektem postaci
+            {"id":[id nauki], "name":[nazwa nauki], "batchsize":[wielkość partii treningowej],
+                "trainingrepetitions":[liczba powtórzeń], "lessonid":[id bazowej lekcji]}
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              parametr trainingId ma nieprawidłową wartość
+        3:              niespodziewany błąd przy próbie odczytania nauki z bazy danych
+        4:              nieprawidłowa metoda http
+
+startTraining.php POST:
+    Umożliwia zalogowanemu użytkownikowi rozpoczęcie nauki jakiejś lekcji.
+    obsługiwane parametry:
+        lessonId {liczba}:      id lekcji, której nauka ma zostać rozpoczęta
+        batchSize {liczba}:     wielkość partii treningowej
+        trainingRepetitions {liczba}:   ilość powtarzania wpisu podczas treningu
+        name* {napis}:          opcjonalna nazwa nauki
+    zwracana wartość:
+        0:
+            rozpoczęcie nauki zakończone sukcesem,
+            parametr startedTrainingId zawiera id utworzonej nauki
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żadania
+        3:              zadana lekcja nie istnieje lub użytkownik, nie ma do niej odpowiednich praw dostępu
+        4:              podana wielkość parti treningowej nie jest poprawną wartością
+        5:              podana liczba powtórzeń nie jest poprawną wartością
+        6:              podana nazwa nie jest poprawną nazwą nauki
+        7:              niespodziewany błąd przy próbie rozpoczęcia nauki
+
+editTraining.php POST:
+    Umożliwia zalogowanemu użytkownikowi zaktualizowanie ustawień jakiejś z nauk, do której ma dostęp.
+    obsługiwane parametry:
+        trainingId {liczna}:    id nauki, która ma zostać zaktualizowana
+        lessonId {liczba}:      id lekcji, której nauka ma zostać zaktualizowana
+        batchSize {liczba}:     wielkość partii treningowej
+        trainingRepetitions {liczba}:   ilość powtarzania wpisu podczas treningu
+        name* {napis}:          opcjonalna nazwa nauki
+    zwracana wartość:
+        0:              aktualizacja nauki zakończona sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żadania
+        3:              zadana nauka nie istnieje lub użytkownik, nie ma do niej odpowiednich praw dostępu
+        4:              podana wielkość parti treningowej nie jest poprawną wartością
+        5:              podana liczba powtórzeń nie jest poprawną wartością
+        6:              podana nazwa nie jest poprawną nazwą treningu
+        7:              niespodziewany błąd przy aktualizacji treningu
+}
+
+getNextTrainingBatch.php GET:
+    Umożliwia, użytkownikowi, który rozpoczął naukę jakiejś lekcji pobranie,
+    następnej parti wpisów do przećwiczenia.
+    Sprawdza dodatkowo czy nauka została zmodyfikowana w wyniku zmiany odpowiadającej jej lekcji bazowej
+    od czasu ostatniego wywołania tej funkcji i jeśli tak się stało informuje odpowiednio użytkownika.
+    obsługiwane parametry:
+        trainingId {liczba}:    id nauki, dla której ma być pobrana następna partia treningowa
+    zwracana wartość:
+        0:
+            pobranie następnej partii wpisów do ćwiczenia zakończone sukcesem
+            parametr data wyniku zawiera tabelkę wpisów lekcji postaci:
+            {"id":[id wpisu],"question":[pytanie],"answer":[odpowiedź]}
+            wielkości batchSize odpowiadającej nauki
+            (lub mniejszej jeżeli nie pozostało wystarczająco wpisów do nauki)
+
+            dodatkowo jeśli nauka została zmodyfikowana od czasu ostatniego wywołania żadania getNextTrainingBatch
+            na wskutek zmiany lekcji bazowej, atrybut modifiedSinceLastSeen jest ustawiony na true
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żadania
+        3:              zadana nauka nie istnieje lub użytkownik, nie ma do niej odpowiednich praw dostępu
+        4:              lekcja bazowa nauki została usunięta
+        5:              niespodziewany błąd przy próbie pobrania puli wpisów do nauki
+
+submitTrainingResult.php POST:
+    Umożliwia, użytkownikowi wysłanie na serwer wyników ostatniej nauki.
+    (W przypadku gdy bazowa lekcja została zmodyfikowana od czasu pobrania nauki zwraca błąd)
+    obsługiwane parametry:
+        trainingId {liczba}:    id nauki, której użytkownik się uczy
+        correctAnswers {tablica liczb w formacie json}:   id wpisów, na które użytkownik odpowiedział poprawnie
+        wrongAnswers {tablica liczb w formacie json}:     id wpisów, na które użytkownik odpowiedział niepoprawnie
+    zwracana wartość:
+        0:
+            odpowiednie uaktualnienie nauki zakończone sukcesem
+            parametr data wyniku w atrybucie progress zawiera wyliczony postęp użytkownika (liczba)
+            parametr newTrainingState zawiera wpis odnoszący się do nauki po aktualizacji
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żadania
+        3:              parametr correctAnswers ma niepoprawny format
+        4:              parametr wrongAnswers ma niepoprawny format
+        5:              zadana nauka nie istnieje lub użytkownik, nie ma do niej odpowiednich praw dostępu
+        6:              nauka została zmodyfikowana od czasu pobrania partii treningowej, nie można zapisać wyniku
+        7:              parametr correctAnswers lub wrongAnswers jest w jakiś sposób niepoprawny (zawiera niepoprawne id)
+        8:              niespodziewany błąd przy próbie uaktualnienia nauki
+
+endTraining.php POST:
+    Umożliwia zalogowanemu użytkownikowi zakończenie, którejś z uprzednio rozpoczętych nauk.
+    obsługiwane parametry:
+        trainingId {liczba}:       id nauki, która ma zostać zakończona
+    zwracana wartość:
+        0:              zakończenie nauki zakończone sukcesem
+        1:              w danej sesji nie ma zalogowanego użytkownika
+        2:              brak, któregoś z wymaganych parametrów żądania
+        3:              parametr trainingId, nie jest liczbą całkowitą
+        4:              zalogowany użytkownik nie ma praw dostępu do zadanej nauki,
+                        lub nauka nie istnieje
+        5:              niespodziewany błąd przy próbie zakończenia nauki
+
+createGroup.php POST:
+    Umożliwia zalogowanemu użytkownikowi utworzenie grupy, której zostanie właścicielem.
+    obsługiwane parametry:
+        name {napis}:           nazwa grupy do utworzenia
+        description* {napis}:   opis grupy, domyślnie pusty napis
+    zwracana wartość:
+        0:
+            utworzenie nowej grupy zakończone sukcesem,
+            id utworzonej grupy zostaje zwrócone w atrybucie createdGroupId
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak, któregoś z nieopcjonalnych parametrów żadania
+        3:              podana nazwa grupy, nie jest składniowo poprawna
+        4:              podany opis grupy, nie jest składniowo poprawny
+        5:              niespodziewany błąd przy próbie dodania grupy do bazy danych
+        
+
+updateGroup.php POST:
+    Umożliwia właścicielowi grupy, zaktualizowanie informacji o grupie.
+    obsługiwane parametry:
+        groupId {liczna}:       id grupy, która ma zostać zaktualizowana
+        newName* {liczba}:      nowa nazwa grupy
+        newDescription* {liczba}:   nowy opis grupy
+        (chociaż jeden z opcjonalnych parametrów żadania powinien być obecny)
+    zwracana wartość:
+        0:              aktualizacja grupy zakończona sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              żądana grupa nie istnieje lub użytkownik, nie ma do niej odpowiednich praw dostępu
+        4:              podana nazwa grupy nie jest poprawna składniowo
+        5:              podany opis grupy nie jest poprawny składniowo
+        7:              niespodziewany błąd przy aktualizacji grupy
+
+removeGroup.php POST:
+    Umożliwia właścicielowi grupy rozwiązanie grupy.
+    obsługiwane parametry:
+        groupId {liczba}:       id grupy, która ma zostać usunięta
+    zwracana wartość:
+        0:              rozwiązanie grupy zakończone sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              żądana grupa nie istnieje lub użytkownik, nie ma do niej odpowiednich praw dostępu
+        4:              niespodziewany błąd przy próbie usunięcia grupy z bazy danych
+
+listGroups.php GET:
+    Umożliwia zalogowanemu użytkownikowi pobranie listy grup, do których należy,
+    filtrując je według opcjonalnych parametrów.
+    obsługiwane parametry:
+        limit* {liczba}:        maksymalna liczba grup do zwrócenia,
+                                domyślna wartość -1 oznaczająca wszystkie możliwe
+    zwracana wartość:
+        0:
+            zwrócenie listy grup zakończone sukcesem,
+            parametr data wyniku jest tabelką obiektów postaci
+            {"role":[0/1] "id":[id grupy], "name":[nazwa grupy], "description":[opis grupy]}
+            gdzie każdy taki obiekt odpowiada pojedynczej grupie w bazie danych,
+            a wartość "role" jest równa:
+                1: jeśli zalogowany użytkownik jest właścicielem grupy
+                0: wpp.
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              parametr limit ma nieprawidłową wartość
+        3:              niespodziewany błąd przy próbie odczytania listy grup z bazy danych
+        4:              nieprawidłowa metoda http
+
+sendGroupJoinRequest.php POST:
+    Umożliwia zalogowanemu użytkownikowi na wysłanie prośby dołączenia do grupy.
+    obsługiwane parametry:
+        groupId {liczba}:       id grupy, do której użytkownik chce dołączyć
+        requestText* {string}:  treść prośby dołączenia do grupy,
+                                która zostanie wyświetlona właścicielowi grupy
+                                domyślnie pusty napis
+    zwracana wartość:
+        0:              złożenie prośby o dołączenie do grupy zakończone sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              żądana grupa nie istnieje
+        4:              niepoprawny treść prośby dołączenia
+        5:              zalogowany użytkownik posiada aktywną prośbę dołączenia do wskazanej grupy
+        6:              prośby użytkownika dołączenia do tej grupy zostały zablokowane
+                        parametr bannedTime może zawierać czas w milisekundach,
+                        przez który użytkownik nie może wysyłać dalszych próśb
+        7:              niespodziewany błąd przy próbie dodania prośby do bazy danych
+
+
+acceptGroupJoinRequest.php POST:
+    Umożliwia właścicielowi grupy zaakceptowanie prośby dołączenia do grupy.
+    obsługiwane parametry:
+        joinRequestId {liczba}: id prośby dołączenia, którą chcemy zaakceptować
+    zwracana wartość:
+        0:              zaakceptowanie prośby dołączenia do grupy zakończone sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              parametr joinRequestId nie jest liczbą
+        4:              wybrana prośba dołączenia do grupy nie istnieje,
+                        lub dotyczy grupy, do której użytkownik nie ma odpowiednich praw dostępu
+        5:              niespodziewany błąd przy próbie zatwierdzenia zmian w bazie danych
+
+
+denyGroupJoinRequest.php POST:
+    Umożliwia właścicielowi grupy odrzucenie prośby dołączenia do grupy.
+    obsługiwane parametry:
+        joinRequestId {liczba}: id prośby dołączenia, którą chcemy odrzucić
+    zwracana wartość:
+        0:              odrzucenie prośby dołączenia do grupy zakończone sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              parametr joinRequestId nie jest liczbą
+        4:              wybrana prośba dołączenia do grupy nie istnieje,
+                        lub dotyczy grupy, do której użytkownik nie ma odpowiednich praw dostępu
+        5:              niespodziewany błąd przy próbie zatwierdzenia zmian w bazie danych
+
+listGroupJoinRequests.php GET:
+    Umożliwia właścicielowi grupy pobranie listy oczekujących próśb dołączenia do grupy.
+    obsługiwane parametry:
+        groupId {liczba}:       id grupy, której prośby dołączenia chcemy wyświetlić
+        limit* {liczba}:        maksymalna liczba próśb do zwrócenia,
+                                domyślna wartość -1 oznaczająca wszystkie możliwe
+    zwracana wartość:
+        0:
+            zwrócenie listy próśb dołączenia zakończone sukcesem,
+            parametr data wyniku jest tabelką obiektów postaci
+            {"id":[id prośby], "description":[opis prośby], "userName":[login użytkownika, który wysłał prośbę]}
+            gdzie każdy taki obiekt odpowiada pojedynczej prośbie dołączenia do grupy w bazie danych
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              parametr groupId nie jest liczbą
+        4:              parametr limit ma nieprawidłową wartość
+        5:              grupa o podanym id nie istnieje, lub użytkownik nie ma do niej odpowiednich praw dostępu
+        6:              niespodziewany błąd przy próbie odczytania listy próśb z bazy danych
+        7:              nieprawidłowa metoda http
+
+listGroupMembers.php GET:
+    Umożliwia właścicielowi grupy pobranie listy członków grupy.
+    obsługiwane parametry:
+        groupId {liczba}:       id grupy, której członków chcemy wyświetlić
+        limit* {liczba}:        maksymalna liczba członków do zwrócenia,
+                                domyślna wartość -1 oznaczająca wszystkich możliwych
+    zwracana wartość:
+        0:
+            zwrócenie listy członków zakończone sukcesem,
+            parametr data wyniku jest tabelką obiektów postaci
+            {"name":[login użytkownika]}
+            gdzie każdy taki obiekt odpowiada pojedynczemu członkowi grupy w bazie danych
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              parametr groupId nie jest liczbą
+        4:              parametr limit ma nieprawidłową wartość
+        5:              grupa o podanym id nie istnieje, lub użytkownik nie ma do niej odpowiednich praw dostępu
+        6:              niespodziewany błąd przy próbie odczytania listy członków z bazy danych
+
+kickGroupMember.php POST:
+    Umożliwia właścicielowi grupy usunięcie członka z grupy.
+    obsługiwane parametry:
+        groupId {liczba}:       id grupy, z której członka chcemy usunąć
+        userId {String}:        login członka, którego chcemy usunąć z grupy
+    zwracana wartość:
+        0:              usunięcie członka zakończone sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              parametr groupId nie jest liczbą
+        4:              parametr userId nie jest poprawnym stringiem
+        5:              podany użytkownik nie istnieje,
+                        nie należy do zadanej grupy,
+                        lub użytkownik nie ma odpowiednich praw dostępu by wykonać operację
+        6:              niespodziewany błąd przy próbie usunięcia członka z bazy danych
+
+leaveGroup.php POST:
+    Umożliwia użytkownikowi opuszczenie grupy.
+    obsługiwane parametry:
+        groupId {liczba}:       id grupy, którą użytkownik chce opuścić
+    zwracana wartość:
+        0:              opuszczenie grupy zakończone sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              parametr groupId nie jest liczbą
+        4:              grupa nie istnieje, lub użytkownik do niej nie należy
+        5:              niespodziewany błąd przy próbie modyfikacji bazy danych
+
+shareLessonWithGroup.php POST:
+    Umożliwia zalogowanemu użytkownikowi o odpowiednich uprawnieniach,
+    (aktualnie właścicielowi grupy i lekcji), udostępnienie prywatnej lekcji grupie użytkowników.
+    obsługiwane parametry:
+        groupId {liczba}:       id grupy, której chcemy udostępnić lekcję
+        lessonId {liczba}:      id lekcji, którą chcemy udostępnić
+    zwracana wartość:
+        0:              udostępnienie lekcji zakończone sukcesem
+        1:              w danej sesji, nie ma zalogowanego użytkownika
+        2:              brak któregoś z wymaganych parametrów żądania
+        3:              parametr groupId nie jest liczbą
+        4:              parametr lessonId nie jest liczbą
+        5:              zadana lekcja nie istnieje,
+                        użytkownik nie ma uprawnień aby udostępnić zadaną lekcję,
+                        użytkownik nie ma uprawnień by udostępnić lekcję w danej grupie,
+                        lub podana grupa nie istnieje
+        6:              niespodziewany błąd przy próbie modyfikacji bazy danych
+
+
+listLessonSharings.php GET:
+    Umożliwia właścicielowi lekcji pobranie listy grup, którym lekcja jest udostępniona.
+    obsługiwane parametry:
+        lessonId {liczba}:      id lekcji, której listę udostępnień chcemy pobrać
+        limit* {liczba}:        maksymalna liczba udostępnień do zwrócenia,
+                                domyślna wartość -1 oznaczająca wszystkie możliwe
+    zwracana wartość:
+    0:
+        zwrócenie listy udostępnień zakończone sukcesem,
+        parametr data wyniku jest tabelką obiektów postaci
+        {"id":[id grupy], "name":[nazwa grupy, której udostępniona jest lekcja]}
+        gdzie każdy taki obiekt odpowiada pojedynczej grupie, której udostępniona jest lekcja w bazie danych
+    1:              w danej sesji, nie ma zalogowanego użytkownika
+    2:              brak któregoś z wymaganych parametrów żądania
+    3:              parametr lessonId nie jest liczbą
+    4:              parametr limit ma nieprawidłową wartość
+    5:              lekcja o podanym id nie istnieje, lub użytkownik nie ma do niej odpowiednich praw dostępu
+    6:              niespodziewany błąd przy próbie odczytania listy udostępnień z bazy danych
+
+
+removeLessonSharing.php POST:
+    Umożliwia użytkownikowi zaprzestać udostępniać lekcję.
+    obsługiwane parametry:
+        lessonId {liczba}:      id lekcji, którą chcemy przestać udostępniać
+        groupId {liczba}:       id grupy, której chcemy przestać udostępniać
+    zwracana wartość:
+    0:              zaprzestanie udostępniania lekcji zakończone sukcesem
+    1:              w danej sesji, nie ma zalogowanego użytkownika
+    2:              brak któregoś z wymaganych parametrów żądania
+    3:              parametr lessonId nie jest liczbą
+    4:              parametr groupId nie jest liczbą
+    5:              lekcja o podanym id nie istnieje,
+                    użytkownik nie ma odpowiednich praw dostępu do zadanej lekcji
+                    zadana lekcja nie jest udostępniana danej grupie,
+                    lub podana grupa nie istnieje
+    6:              niespodziewany błąd przy próbie modyfikacji bazy danych
+
+listGroupSharedLessons.php GET:
+    Umożliwia członkowi grupy wyświetlenie listy lekcji udostępnionych w zadanej grupie.
+    obsługiwane parametry:
+        groupId {liczba}:       id grupy, której listę udostępnionych lekcji chcemy pobrać
+        limit* {liczba}:        maksymalna liczba udostępnionych lekcji do zwrócenia,
+                                domyślna wartość -1 oznaczająca wszystkie możliwe
+    zwracana wartość:
+    0:
+        zwrócenie listy udostępnionych lekcji zakończone sukcesem,
+        parametr data wyniku jest tabelką obiektów postaci
+        {"id":[id lekcji], "name":[nazwa lekcji]}
+        gdzie każdy taki obiekt odpowiada pojedynczej lekcji udostępnionej grupie w bazie danych
+    1:              w danej sesji, nie ma zalogowanego użytkownika
+    2:              brak któregoś z wymaganych parametrów żądania
+    3:              parametr groupId nie jest liczbą
+    4:              parametr limit ma nieprawidłową wartość
+    5:              grupa o podanym id nie istnieje, lub użytkownik nie ma do niej odpowiednich praw dostępu
+    6:              niespodziewany błąd przy próbie odczytania listy udostępnionych lekcji z bazy danych

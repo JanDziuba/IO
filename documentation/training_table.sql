@@ -1,0 +1,10 @@
+CREATE TABLE training (
+    id SERIAL PRIMARY KEY,
+    batchSize INTEGER NOT NULL,
+    trainingRepetitions INTEGER NOT NULL,
+    name VARCHAR(64),
+    lesson_fk INT REFERENCES Lesson ON DELETE SET NULL,
+    user_fk VARCHAR(20) NOT NULL REFERENCES Account ON DELETE CASCADE,
+    update_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
